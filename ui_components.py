@@ -146,7 +146,7 @@ class UIComponents:
         prize_label = tk.Label(
             self.display_frame,
             text="GRAND PRIZE",
-            font=('Montserrat', 36, 'bold'),
+            font=('Montserrat', 33, 'bold'),
             bg=self.colors['primary'],
             fg=self.colors['gold']
         )
