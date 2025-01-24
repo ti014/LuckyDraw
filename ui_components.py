@@ -66,7 +66,7 @@ class UIComponents:
         
         title_label = tk.Label(
             title_frame,
-            text="LUCKY DRAW FIS DT",
+            text="LUCKY DRAW FIS DT HCM",
             font=('Montserrat', 32, 'bold'),
             bg=self.colors['bg'],
             fg=self.colors['gold']
@@ -155,7 +155,7 @@ class UIComponents:
         self.name_label = tk.Label(
             self.canvas,
             text="Ready to Start",
-            font=('Montserrat', 72, 'bold'),
+            font=('Montserrat', 70, 'bold'),
             bg=self.colors['primary'],
             fg=self.colors['gold']
         )

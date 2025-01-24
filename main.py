@@ -8,12 +8,11 @@ from audio_handler import AudioHandler
 from ui_components import UIComponents
 from file_operations import FileOperations
 from PIL import Image, ImageTk
-import json
 
 class ModernLuckyDraw:
     def __init__(self, root):
         self.root = root
-        self.root.title("Lucky Draw FIS DT")
+        self.root.title("Lucky Draw FIS DT HCM")
         self.root.attributes('-fullscreen', True)  # Set to full screen by default
         
         # Initialize modules
@@ -28,7 +27,6 @@ class ModernLuckyDraw:
         # Setup audio
         self.audio_handler.setup_audio()
         
-        # State variables
         self.is_drawing = False
         self.animation_speed = 50
         self.current_participant = None
@@ -61,18 +59,11 @@ class ModernLuckyDraw:
         }
         
     def load_excel_file(self):
-        """Load participants asynchronously"""
-        self.ui_components.file_label.config(text="Loading file...")
-        self.file_operations.load_excel_file_async(self.on_load_complete)
-
-    def on_load_complete(self, num_participants):
-        """Runs on main thread after loading"""
-        if num_participants:
-            self.update_file_label(num_participants)
-            if num_participants > 0:
-                self.ui_components.start_btn.config(state='normal')
-        else:
-            self.ui_components.file_label.config(text="No file loaded or error.")
+        """Load participants from Excel file"""
+        num_participants = self.file_operations.load_excel_file()
+        self.update_file_label(num_participants)
+        if num_participants > 0:
+            self.ui_components.start_btn.config(state='normal')
 
     def update_file_label(self, num_participants):
         """Update the file label with the number of participants loaded"""
@@ -101,6 +92,9 @@ class ModernLuckyDraw:
     def finish_selection(self):
         """Complete drawing process"""
         self.is_drawing = False
+        self.root.after(100, self._finish_selection)
+
+    def _finish_selection(self):
         winner_record = next(
             x for x in self.file_operations.participants 
             if x['Name'] == self.current_participant_name
@@ -109,16 +103,11 @@ class ModernLuckyDraw:
         self.file_operations.participants.remove(winner_record)
         self.audio_handler.stop_background_music()
         
-        winner_text = winner_record['Name']
-        if 'Group' in winner_record and 'Group' in winner_record:
-            winner_text += f"\n{winner_record['Group']}"
-        if 'Department' in winner_record and 'Department' in winner_record:
-            winner_text += f" - {winner_record['Department']}"
+        winner_text = winner_record['Name'].encode('utf-8').decode('utf-8')
+        if 'Group' in winner_record and 'Department' in winner_record:
+            winner_text += f"\n{winner_record['Group'].encode('utf-8').decode('utf-8')} - {winner_record['Department'].encode('utf-8').decode('utf-8')}"
         
-        self.ui_components.name_label.config(
-            text=winner_text,
-            fg=self.ui_components.colors['gold']
-        )
+        self.fade_in_text(winner_text)
         self.ui_components.winners_list.insert(
             0,
             f"🏆 {datetime.now().strftime('%Y-%m-%d %H:%M')} - {winner_text}"
@@ -129,6 +118,18 @@ class ModernLuckyDraw:
         self.ui_components.next_btn.config(state='normal')
         self.audio_handler.announce_winner(winner_record)
         self.audio_handler.cleanup_winner_audio()
+
+    def fade_in_text(self, text, step=0):
+        """Fade in the text by gradually increasing the opacity"""
+        if step > 10:
+            return
+        alpha = int(255 * (step / 10))
+        self.ui_components.name_label.config(
+            text=text,
+            fg=self.ui_components.colors['gold']
+        )
+        self.ui_components.name_label.update_idletasks()
+        self.root.after(50, self.fade_in_text, text, step + 1)
         
     def next_round(self):
         """Prepare for next round"""
@@ -171,9 +172,6 @@ class ModernLuckyDraw:
             return winners
         except FileNotFoundError:
             return None
-        except json.JSONDecodeError:
-            print("Could not parse winners file, possibly empty or invalid.")
-            return []
             
     def set_background_image(self):
         """Set the background image"""
